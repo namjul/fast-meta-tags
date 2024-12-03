@@ -114,9 +114,22 @@ function getTitle (html) {
 }
 
 function normalize (text) {
-  return text.replace(/&#\d+;/g, inline)
+  return text.replace(/&#\d+;/g, inlineNumericEntity).replace(/&(amp|nbsp|lt|gt|quot|apos);/g, inlineEntity)
 }
 
-function inline (s) {
+function inlineNumericEntity (s) {
   return String.fromCharCode(s.slice(2, -1))
+}
+
+function inlineEntity (s) {
+  switch (s) {
+    case '&amp;': return '&'
+    case '&nbsp;': return ' '
+    case '&lt;': return '<'
+    case '&gt;': return '>'
+    case '&quot;': return '"'
+    case '&quot;': return '\''
+  }
+
+  return s
 }
