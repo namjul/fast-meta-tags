@@ -1,4 +1,4 @@
-# fetch-meta-tags
+# fast-meta-tags
 
 Fetch the meta tags and title from an URL.
 Trades correctness for speed, so very fast, but might be wrong.
