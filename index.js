@@ -2,16 +2,20 @@ module.exports = fetchAndParse
 module.exports.parse = parse
 
 async function fetchAndParse (url) {
-  const r = await fetch(url, {
-    headers: {
-      userAgent: 'link-preview'
-    }
-  })
+  try {
+    const r = await fetch(url, {
+      headers: {
+        userAgent: 'link-preview'
+      }
+    })
 
-  if (!r.ok) return null
+    if (!r.ok) return null
 
-  const t = await r.text()
-  return parse(t)
+    const t = await r.text()
+    return parse(t)
+  } catch {
+    return null
+  }
 }
 
 function parse (html) {
