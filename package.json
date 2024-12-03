@@ -1,0 +1,18 @@
+{
+  "name": "fast-meta-tags",
+  "version": "0.0.0",
+  "description": "Get the meta tags and title from an url",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/holepunchto/fast-meta-tags.git"
+  },
+  "author": "Holepunch Inc.",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/holepunchto/fast-meta-tags/issues"
+  },
+  "homepage": "https://github.com/holepunchto/fast-meta-tags"
+}
