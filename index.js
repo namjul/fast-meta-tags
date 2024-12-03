@@ -1,11 +1,15 @@
+// just something generic
+const defaultUserAgent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/122.0'
+
 module.exports = fetchAndParse
 module.exports.parse = parse
+module.exports.userAgent = defaultUserAgent
 
-async function fetchAndParse (url) {
+async function fetchAndParse (url, { userAgent = defaultUserAgent } = {}) {
   try {
     const r = await fetch(url, {
       headers: {
-        userAgent: 'link-preview'
+        userAgent
       }
     })
 
