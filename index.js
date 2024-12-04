@@ -30,23 +30,26 @@ async function fetchAndParse (url, { userAgent = defaultUserAgent, redirect = 'f
     if (!r.ok) return null
 
     const t = await r.text()
-    return parse(t)
+    return parse(t, r.url)
   } catch {
     if (timer) clearTimeout(timer)
     return null
   }
 }
 
-function parse (html) {
+function parse (html, url) {
   const head = getHead(html)
   if (head === null) return null
 
+  const favicon = getFavicon(head, url)
   const title = getTitle(head)
   const meta = getMeta(head)
 
   return {
+    favicon,
     title,
-    meta
+    meta,
+    url
   }
 }
 
@@ -134,6 +137,17 @@ function getTitle (html) {
   if (end === -1) return null
 
   return normalize(html.slice(i, end))
+}
+
+function getFavicon (html, url) {
+  const m = html.match(/<link\s+[^>]*rel=["']?(icon|shortcut icon|apple-touch-icon)["']?[^>]*>/i)
+
+  if (m) {
+    const href = m[0].match(/href=["']([^"']+)/)
+    if (href) return new URL(href[1], url).href
+  }
+
+  return new URL('/favicon.ico', url).href
 }
 
 function normalize (text) {
