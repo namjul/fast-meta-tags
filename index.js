@@ -11,7 +11,8 @@ async function fetchAndParse (url, { userAgent = defaultUserAgent, redirect = 'f
   const options = {
     redirect,
     headers: {
-      'User-Agent': userAgent
+      'User-Agent': userAgent,
+      'Accept': '*/*'
     }
   }
 
