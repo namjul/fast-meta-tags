@@ -3,3 +3,17 @@ sandbox.js
 sandbox
 coverage
 package-lock.json
+
+# Ignore build artifacts
+.zig-cache/
+zig-out/
+
+# Ignore executables
+*.exe
+*.o
+*.a
+
+# Ignore system files
+
+.DS_Store
+Thumbs.db
