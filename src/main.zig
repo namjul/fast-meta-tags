@@ -11,14 +11,34 @@ const test_allocator = testing.allocator;
 // just something generic
 const defaultUserAgent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/122.0";
 
-const ref_url = "https://samuel.hobl.at";
-
 // Some values
 const headers_max_size = 4096;
 const body_max_size = 265536;
 
 pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+    const args = try std.process.argsAlloc(std.heap.page_allocator);
+
+    if (args.len < 2) return error.ExpectedArgument;
+
+    const ref_url = args[1];
+
     const url = try std.Uri.parse(ref_url);
+
+    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+    const allocator = arena.allocator();
+    defer arena.deinit();
+
+    const maybe_parseResult = fetchAndParse(allocator, url) catch |err| {
+        std.debug.print("ERROR: {any} \n", .{err});
+        return;
+    };
+    if (maybe_parseResult) |parseResult| {
+        try stdout.print("{?s}\n", .{parseResult.title});
+    }
+}
+
+pub fn fetchAndParse(allocator: std.mem.Allocator, url: std.Uri) !?ParseResult {
 
     // Create a general purpose allocator
     var gpa = heap.GeneralPurposeAllocator(.{}){};
@@ -64,15 +84,7 @@ pub fn main() !void {
         break :blk &bbuffer;
     };
 
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
-    const allocator = arena.allocator();
-    defer arena.deinit();
-
-    const maybe_parseResult = parse(allocator, html, url);
-
-    if (maybe_parseResult) |parseResult| {
-        std.debug.print("RESULT: {?s}\n{?s}\n", .{ parseResult.title, parseResult.meta.?[0].name });
-    }
+    return parse(allocator, html, url);
 }
 
 const MetaData = struct { name: ?[]const u8, property: ?[]const u8, content: ?[]const u8 };
