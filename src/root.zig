@@ -61,21 +61,54 @@ pub fn fetchAndParse(allocator: std.mem.Allocator, url: std.Uri) !?ParseResult {
         break :blk &bbuffer;
     };
 
-    return parse(allocator, html, url);
+    return try parse(allocator, html, url);
 }
 
 const MetaData = struct { name: ?[]const u8, property: ?[]const u8, content: ?[]const u8 };
-const ParseResult = struct { url: std.Uri, title: ?[]const u8, meta: ?[]MetaData };
+const ParseResult = struct { url: std.Uri, title: ?[]const u8, meta: ?[]MetaData, favicon: ?[]const u8 };
 
-fn parse(allocator: std.mem.Allocator, html: []u8, url: std.Uri) ?ParseResult {
-    const head = getHead(html);
+fn parse(allocator: std.mem.Allocator, html: []u8, url: std.Uri) !ParseResult {
+    const head = getHead(html) orelse "";
 
-    if (head == null) return null;
+    const favicon = try getFavicon(allocator, head, url);
+    const title = getTitle(allocator, head);
+    const meta = getMeta(allocator, head);
 
-    const title = getTitle(allocator, head orelse "");
-    const meta = getMeta(allocator, head orelse "");
+    return ParseResult{ .url = url, .title = title, .meta = meta, .favicon = favicon };
+}
 
-    return ParseResult{ .url = url, .title = title, .meta = meta };
+fn getFavicon(allocator: std.mem.Allocator, html: []const u8, url: std.Uri) ![]const u8 {
+    var faviconUrl = std.Uri{ .scheme = url.scheme, .host = url.host, .port = url.port, .path = url.path, .query = url.query, .fragment = url.fragment };
+
+    var buf = std.ArrayList(u8).init(allocator);
+    defer buf.deinit();
+
+    const faviconLinkRegex = mvzr.compile("<link\\s+[^>]*rel=[\"']?(icon|shortcut icon|apple-touch-icon)[\"']?[^>]*>").?;
+    const match = faviconLinkRegex.match(html);
+
+    if (match != null) {
+        const hrefRegex = mvzr.compile("href=[\"']([^\"']+)").?;
+        const hrefMatch = hrefRegex.match(match.?.slice);
+        if (hrefMatch != null) {
+            faviconUrl.path = std.Uri.Component{ .raw = hrefMatch.?.slice[6..] };
+        }
+    } else {
+        faviconUrl.path = std.Uri.Component{ .raw = "/favicon.ico" };
+    }
+
+    try faviconUrl.format(";+/", .{}, buf.writer());
+
+    return try buf.toOwnedSlice();
+}
+
+test "getFavicon" {
+    const url = try std.Uri.parse("https://samuel.hobl.at");
+
+    const alloc = testing.allocator;
+    const faviconUrl = try getFavicon(alloc, " <link   rel='shortcut icon' href='/static/assets/favicon.ico' type='image/x-icon'>", url);
+    defer alloc.free(faviconUrl);
+
+    try testing.expect(std.mem.eql(u8, faviconUrl, "https://samuel.hobl.at/static/assets/favicon.ico"));
 }
 
 test "getHead" {
@@ -146,10 +179,10 @@ fn getMeta(allocator: std.mem.Allocator, html: []const u8) ?[]MetaData {
 
         var tag = html[(index orelse 0)..(end orelse 0)];
 
-        const maybe_regex = mvzr.compile("\\s*(name|property|content)\\s*=\\s*\"[^\"]*\"?").?;
+        const regex = mvzr.compile("\\s*(name|property|content)\\s*=\\s*\"[^\"]*\"?").?;
 
         while (true) {
-            const match = maybe_regex.match(tag);
+            const match = regex.match(tag);
 
             if (match != null) {
                 var tokens = std.mem.split(u8, match.?.slice, "=");
