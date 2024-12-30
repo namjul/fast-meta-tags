@@ -22,6 +22,10 @@ pub fn main() !void {
         return;
     };
     if (maybe_parseResult) |parseResult| {
-        try stdout.print("{?s}\n", .{parseResult.title});
+        var buf: [1000]u8 = undefined;
+        var fba = std.heap.FixedBufferAllocator.init(&buf);
+        var string = std.ArrayList(u8).init(fba.allocator());
+        try std.json.stringify(parseResult, .{}, string.writer());
+        try stdout.print("{?s}\n", .{string.items});
     }
 }
